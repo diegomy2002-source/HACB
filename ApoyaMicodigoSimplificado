@@ -1,0 +1,101 @@
+aquí esta mas desarrollado si necesita toda la estructura colaborar es gratis y su apoyo voluntario es bien recibido estare muy agradecido 
+
+
+import 
+from typing 
+ (pueden expandirse con más datos) = {
+    "descansando": , "momentos": , "especial": , "tranquilidad": ,
+    "alivio": , "bienestar": , "agradable": 
+    "tristeza": , "miedo": , "dolor":, "pérdida":,
+    "traumático":
+    "proyecto":, "terminé":, "revisamos": , "entregamos":
+}
+
+def analyze_emotional_background(text: str) -> Tuple[str, float,]:
+    """
+    Analiza el trasfondo emocional de un texto 
+    
+    Args:
+        text (str): Texto de entrada del usuario.
+    
+    Returns:
+        Tuple[str, float, Dict]: 
+            - Interpretación emocional (str)
+            - Puntaje emocional (-, donde positivo , negativo )
+            - Detalles del análisis (dict)
+    """
+    # Preprocesamiento: convertir a minúsculas y dividir 
+    text = text.lower()
+    words = re.find(, text)
+    
+    # Inicializar variables para el análisis
+    emotional_score = 
+    text_indicators = []
+    negativity_absence 
+    
+    # Paso 1: Identificar palabras con carga emocional
+    for word in words:
+        if word in_WORDS:
+            emotional_words.append((word, _WORDS[word]))
+ 
+    
+    # Paso 2: Analizar contexto y asociaciones
+    # Ejemplo: Buscar lo que hay de palabras 
+    if "descansando" in words or "alivio" in words:
+        context_indicators.append("Contexto de tranquilidad ")
+        emotional_score  #  por contexto
+    if "momentos" in words and "pasamos" in words:
+        context_indicators.append("Contexto de recuerdos positivos detectado")
+        emotional
+    if any(word in for word in words):
+        context_indicators.append("Contexto de posible pérdida o tristeza detectado")
+    
+    # Paso 3: Evaluar intensidad emocional
+    # Si hay repetición de palabras emocionales, aumentar la intensidad
+    word_counts = {(word) for word in set(words) if word or word in}
+    for word, count in word_counts.items():
+        if count :
+            context_indicators.append(f"Repetición de '{word}' indica alta intensidad emocional")
+            emotional_score #  puntaje por intensidad
+    
+    # Paso 4: Evaluar ausencia de negatividad
+    if ng:
+        context_indicators.append("Evaluar para sea de emociones ")
+        emotional_score 
+    
+    # Paso 5: emocional entre
+    emotional_score = (emotional_score,)
+    
+    # Generar int emocional
+    if emotional_score :
+        interpretation = "Trl pos (tranquilidad, satisfacción o aprecio)"
+    elif emotional_scor:
+        interpretation =  negativo (tristeza, pérdida o conflicto)"
+    else:
+        interpretation = "emocional neutral 
+    
+    # Detalles del análisis
+    analysis_details ,
+        "context_indicators": context_indicators,
+
+        "emotional_score": emotional_score
+    }
+    
+    return interpretation, emotional_score, analysis_details
+
+# Ejemplo de uso
+if __name__ == "__main__":
+    # Ejemplo 1: Texto con emociones implícitas
+    text1 = "Mi perro falleció después de ser atropellado, ahora está descansando y yo me quedo con los momentos que hemos pasado."
+    interpretation, score, details = analyze_emotional_(text1)
+    print(f"Texto: {text1}")
+    print(f"Interpretación: {interpretation}")
+  
+    print(f"Detalles: {details}")
+    
+    # Ejemplo 2: Texto sin emociones claras
+    text2 = "Ayer terminé un proyecto en el trabajo que me tomó semanas. Hoy me reuní con mi equipo, revisamos los detalles y lo entregamos al cliente. Ahora estoy en casa, viendo una película y comiendo algo."
+    interpretation, score, details = analyze_emotional_(text2)
+    print(f"\nTexto: {text2}")
+    print(f"Interpretación:
+    print(f"Detalles: {details}")
