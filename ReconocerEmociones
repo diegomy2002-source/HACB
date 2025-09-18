@@ -1,0 +1,132 @@
+import re
+from typing import Dict, Tuple
+
+# Diccionarios de palabras emocionales (ampliables)
+POSITIVE_WORDS = {
+    "descansando": 0.7, "momentos": 0.6, "especial": 0.8, "tranquilidad": 0.7,
+    "alivio": 0.8, "bienestar": 0.7, "agradable": 0.6, "terminé": 0.3
+}
+NEGATIVE_WORDS = {
+    "tristeza": -0.7, "miedo": -0.6, "dolor": -0.8, "pérdida": -0.7,
+    "traumático": -0.9
+}
+NEUTRAL_WORDS = {
+    "proyecto": 0.0, "revisamos": 0.0, "entregamos": 0.0, "película": 0.2
+}
+
+def analyze_emotional_background_with_empathy(text: str) -> Tuple[str, float, Dict, str]:
+    """
+    Analiza el trasfondo emocional de un texto con un enfoque empático, considerando
+    escenarios positivo, neutral y negativo, y detectando posibles emociones ocultas.
+    
+    Args:
+        text (str): Texto de entrada del usuario.
+    
+    Returns:
+        Tuple[str, float, Dict, str]:
+            - Interpretación emocional (str)
+            - Puntaje emocional (-1 a 1)
+            - Detalles del análisis (dict)
+            - Respuesta empática (str)
+    """
+    # Preprocesamiento
+    text = text.lower()
+    words = re.findall(r'\b\w+\b', text)
+    
+    # Inicializar variables
+    emotional_score = 0.0
+    emotional_words = []
+    context_indicators = []
+    negativity_absence = True
+    possible_hidden_emotions = []
+    
+    # Paso 1: Identificar palabras con carga emocional
+    for word in words:
+        if word in POSITIVE_WORDS:
+            emotional_words.append((word, POSITIVE_WORDS[word]))
+            emotional_score += POSITIVE_WORDS[word]
+        elif word in NEGATIVE_WORDS:
+            emotional_words.append((word, NEGATIVE_WORDS[word]))
+            emotional_score += NEGATIVE_WORDS[word]
+            negativity_absence = False
+        elif word in NEUTRAL_WORDS:
+            emotional_words.append((word, NEUTRAL_WORDS[word]))
+    
+    # Paso 2: Analizar contexto y asociaciones
+    if "descansando" in words or "alivio" in words or "película" in words:
+        context_indicators.append("Contexto de tranquilidad o relajación detectado")
+        emotional_score += 0.2
+    if "momentos" in words and "pasamos" in words:
+        context_indicators.append("Contexto de recuerdos positivos detectado")
+        emotional_score += 0.3
+    if any(word in NEGATIVE_WORDS for word in words):
+        context_indicators.append("Contexto de posible pérdida o tristeza detectado")
+    
+    # Paso 3: Evaluar intensidad emocional
+    word_counts = {word: words.count(word) for word in set(words) if word in POSITIVE_WORDS or word in NEGATIVE_WORDS}
+    for word, count in word_counts.items():
+        if count > 1:
+            context_indicators.append(f"Repetición de '{word}' indica alta intensidad emocional")
+            emotional_score *= 1.2
+    
+    # Paso 4: Detectar posibles emociones ocultas
+    if not emotional_words and len(words) > 5:
+        possible_hidden_emotions.append("Ausencia de emociones explícitas podría indicar supresión o distracción")
+    if "terminé" in words and not any(word in ["satisfacción", "alivio", "orgullo"] for word in words):
+        possible_hidden_emotions.append("Falta de mención del resultado del proyecto podría indicar preocupación o insatisfacción oculta")
+    if "película" in words or "comiendo" in words:
+        possible_hidden_emotions.append("Actividades relajantes podrían ser un intento de evitar emociones difíciles")
+    
+    # Paso 5: Evaluar ausencia de negatividad
+    if negativity_absence:
+        context_indicators.append("Ausencia de emociones negativas explícitas")
+        emotional_score += 0.1
+    
+    # Paso 6: Normalizar puntaje emocional
+    emotional_score = max(min(emotional_score, 1.0), -1.0)
+    
+    # Paso 7: Generar interpretación de los tres escenarios
+    neutral_scenario = "El usuario describe eventos sin emociones claras, posiblemente indicando aceptación o neutralidad."
+    positive_scenario = "El usuario podría estar satisfecho o aliviado, especialmente si completó una tarea importante."
+    negative_scenario = "El usuario podría estar ocultando preocupaciones, como inseguridad laboral o problemas personales, usando actividades relajantes como distracción."
+    
+    # Paso 8: Generar respuesta empática
+    empathetic_response = (
+        "¡Vaya, terminar un proyecto de semanas es todo un logro! Suena como que has estado muy ocupado, y ahora estás tomando un momento para relajarte con una película, lo cual parece un buen plan. "
+        "Me pregunto cómo te sientes después de entregar el proyecto. ¿Es un momento de alivio y satisfacción porque todo salió bien? ¿O tal vez estás tomando este tiempo para desconectar de otras cosas que tienes en la cabeza? "
+        "A veces, cuando completamos algo grande, puede haber una mezcla de emociones: orgullo por el trabajo hecho, pero también incertidumbre sobre lo que viene después, como el trabajo o cosas personales. "
+        "Si quieres, me encantaría escuchar más sobre cómo estás llevando este momento o si hay algo más que te está rondando. Estoy aquí para ayudarte a reflexionar."
+    )
+    
+    # Detalles del análisis
+    analysis_details = {
+        "emotional_words": emotional_words,
+        "context_indicators": context_indicators,
+        "negativity_absence": negativity_absence,
+        "possible_hidden_emotions": possible_hidden_emotions,
+        "scenarios": {
+            "neutral": neutral_scenario,
+            "positive": positive_scenario,
+            "negative": negative_scenario
+        }
+    }
+    
+    # Interpretación emocional
+    if emotional_score > 0.3:
+        interpretation = "Trasfondo emocional positivo (tranquilidad, satisfacción o aprecio)"
+    elif emotional_score < -0.3:
+        interpretation = "Trasfondo emocional negativo (tristeza, pérdida o conflicto)"
+    else:
+        interpretation = "Trasfondo emocional neutral o ambiguo, con posibles emociones ocultas"
+    
+    return interpretation, emotional_score, analysis_details, empathetic_response
+
+# Ejemplo de uso
+if __name__ == "__main__":
+    text = "Ayer terminé un proyecto en el trabajo que me tomó semanas. Hoy me reuní con mi equipo, revisamos los detalles y lo entregamos al cliente. Ahora estoy en casa, viendo una película y comiendo algo."
+    interpretation, score, details, response = analyze_emotional_background_with_empathy(text)
+    print(f"Texto: {text}")
+    print(f"Interpretación: {interpretation}")
+    print(f"Puntaje emocional: {score}")
+    print(f"Detalles: {details}")
+    print(f"Respuesta empática: {response}")
