@@ -1,0 +1,148 @@
+
+import math
+import numpy as np
+from scipy.stats import norm
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+import networkx as nx
+import re
+from typing import Dict, Tuple, List
+import itertools
+
+# Tu código original integrado (funciones clave)
+def entropia(p):
+    return -sum([p_i * math.log(p_i, 2) if p_i > 0 else 0 for p_i in p])
+
+def generar_retroalimentacion_con_ruido(base, num_usuarios, media=0, desviacion=0.5):
+    ruido = norm.rvs(loc=media, scale=desviacion, size=num_usuarios)
+    return np.clip(base + ruido, 1, 5)
+
+def ajuste_con_regresion(X, y):
+    modelo = LinearRegression()
+    modelo.fit(X, y)
+    return modelo
+
+def crear_grafo_parametros():
+    G = nx.Graph()
+    G.add_edge('Neutral', 'Positivo', weight=1)  # Adaptado para emociones
+    G.add_edge('Positivo', 'Negativo', weight=2)
+    G.add_edge('Neutral', 'Negativo', weight=3)
+    return G
+
+def generar_inicializaciones(n_params, r=3):
+    valores_posibles = np.linspace(0.5, 2.0, n_params)
+    return list(itertools.permutations(valores_posibles, r))[:5]
+
+# Función emocional previa, adaptada
+POSITIVE_WORDS = {"alivio": 0.8, "satisfacción": 0.7, "tranquilidad": 0.7}
+NEGATIVE_WORDS = {"preocupación": -0.7, "conflicto": -0.8}
+NEUTRAL_WORDS = {"proyecto": 0.0, "película": 0.2}
+
+def analyze_emotional_background_with_empathy(text: str) -> Tuple[str, float, Dict]:
+    text = text.lower()
+    words = re.findall(r'\b\w+\b', text)
+    emotional_score = 0.0
+    emotional_words = []
+    context_indicators = []
+    negativity_absence = True
+    possible_hidden_emotions = []
+
+    for word in words:
+        if word in POSITIVE_WORDS:
+            emotional_score += POSITIVE_WORDS[word]
+            emotional_words.append((word, POSITIVE_WORDS[word]))
+        elif word in NEGATIVE_WORDS:
+            emotional_score += NEGATIVE_WORDS[word]
+            emotional_words.append((word, NEGATIVE_WORDS[word]))
+            negativity_absence = False
+        elif word in NEUTRAL_WORDS:
+            emotional_score += NEUTRAL_WORDS[word]
+            emotional_words.append((word, NEUTRAL_WORDS[word]))
+
+    # Detección de ocultas (simplificado)
+    if "proyecto" in words and "satisfacción" not in words:
+        possible_hidden_emotions.append("Posible insatisfacción oculta")
+
+    emotional_score = max(min(emotional_score, 1.0), -1.0)
+    interpretation = "Neutral" if abs(emotional_score) < 0.3 else ("Positivo" if emotional_score > 0 else "Negativo")
+
+    return interpretation, emotional_score, {
+        "emotional_words": emotional_words,
+        "possible_hidden_emotions": possible_hidden_emotions
+    }
+
+# Nueva clase: API para simular datos de usuarios registrados
+class EmotionalAPI:
+    def __init__(self):
+        self.user_history = {}  # Historial: {user_id: [textos pasados]}
+
+    def register_user_interaction(self, user_id: str, text: str):
+        if user_id not in self.user_history:
+            self.user_history[user_id] = []
+        self.user_history[user_id].append(text)
+        # Simular "brindando datos": Retornar historial para análisis
+        return self.user_history[user_id]
+
+    def get_user_feedback_data(self, user_id: str, num_samples: int = 5):
+        # Simular datos no especificados: Generar retro con ruido basado en historial
+        if user_id in self.user_history:
+            # Extraer scores emocionales del historial
+            scores = [analyze_emotional_background_with_empathy(t)[1] for t in self.user_history[user_id][-num_samples:]]
+            base = np.array(scores) * 2 + 2  # Escalar a 1-5
+        else:
+            base = np.array([3.0] * num_samples)  # Default neutral
+        return generar_retroalimentacion_con_ruido(base, num_samples)
+
+# Función de simulación principal: Integra todo para escenarios no especificados
+def simulate_emotional_scenario(api: EmotionalAPI, user_id: str, input_text: str, num_iterations: int = 10):
+    # Análisis inicial emocional
+    scenario, score, details = analyze_emotional_background_with_empathy(input_text)
+    print(f"Escenario inicial para {user_id}: {scenario} (score: {score:.2f})")
+
+    # Registrar interacción en API
+    api.register_user_interaction(user_id, input_text)
+
+    # Preparar simulación con tu código
+    num_usuarios = 1  # Enfocado en este usuario
+    resultados_esperados = np.array([4.0])  # Meta: empatía óptima
+    retro_base = api.get_user_feedback_data(user_id, num_usuarios)  # Datos "brindados" por API
+    inicializaciones = generar_inicializaciones(3, 3)  # Params: intensidad empatía, etc.
+    parametros_actuales = np.array(inicializaciones[0])
+
+    G = crear_grafo_parametros()
+    camino_optimo = nx.shortest_path(G, 'Neutral', scenario, weight='weight')
+    print(f"Camino emocional óptimo: {camino_optimo}")
+
+    for iteracion in range(num_iterations):
+        retroalimentacion = generar_retroalimentacion_con_ruido(retro_base, num_usuarios)
+        probs_retro = retroalimentacion / np.sum(retroalimentacion)
+        ent = entropia(probs_retro)
+        print(f"Iteración {iteracion+1}: Entropía = {ent:.2f}")
+
+        X = retroalimentacion.reshape(-1, 1)
+        modelo = ajuste_con_regresion(X, resultados_esperados.reshape(-1, 1))
+        resultados = modelo.predict(X).flatten()
+        mse = mean_squared_error(resultados, resultados_esperados)
+        print(f"Iteración {iteracion+1}: MSE = {mse:.2f}")
+
+        # Mejorar respuesta: Ajustar basado en params (e.g., generar respuesta más empática si MSE bajo)
+        if mse < 0.2:
+            improved_response = f"Respuesta mejorada iter {iteracion+1}: Basado en tu historial, detecto {scenario} con posibles ocultas: {details['possible_hidden_emotions']}. ¿Quieres explorar el escenario positivo?"
+        else:
+            improved_response = f"Respuesta base: Suena neutral. Cuéntame más."
+
+        # Actualizar params
+        parametros_actuales = np.array([modelo.coef_[0][0], modelo.intercept_[0], parametros_actuales[2]])
+        if mse > 0.5 and iteracion < num_iterations - 1:
+            parametros_actuales = np.array(inicializaciones[(iteracion + 1) % len(inicializaciones)])
+
+        retro_base = retroalimentacion  # Evolución
+
+    return "Simulación completada: Respuestas mejoradas generadas con datos de API."
+
+# Ejemplo de uso
+if __name__ == "__main__":
+    api = EmotionalAPI()
+    text = "Ayer terminé un proyecto, ahora veo una película."
+    print(simulate_emotional_scenario(api, "diego_munoz", text))
+
